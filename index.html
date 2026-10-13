@@ -49,6 +49,8 @@
     blockquote::after { content: "\201D"; color: var(--accent); margin-left: 2px; }
     .meta { margin-top: 10px; color: var(--muted); font: 14px system-ui, sans-serif; }
     .meta .source { color: var(--fg); }
+    .meta a.source { text-decoration: none; border-bottom: 1px solid var(--line); }
+    .meta a.source:hover { color: var(--accent); border-color: var(--accent); }
     .empty { color: var(--muted); padding: 28px 0; font-family: system-ui, sans-serif; }
   </style>
 </head>
@@ -80,9 +82,18 @@
         bq.textContent = x.text;
         const meta = document.createElement("div");
         meta.className = "meta";
-        const source = document.createElement("span");
+        const src = x.source || "Unknown";
+        const isUrl = /^https?:\/\//i.test(src);
+        const source = document.createElement(isUrl ? "a" : "span");
         source.className = "source";
-        source.textContent = "— " + (x.source || "Unknown");
+        if (isUrl) {
+          source.href = src;
+          source.target = "_blank";
+          source.rel = "noopener";
+          source.textContent = "— " + new URL(src).hostname.replace(/^www\./, "") + " ↗";
+        } else {
+          source.textContent = "— " + src;
+        }
         meta.append(source);
         if (x.added) meta.append(" · " + x.added);
         article.append(bq, meta);
