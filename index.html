@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quotes</title>
+  <style>
+    :root {
+      --bg: #faf8f5;
+      --fg: #1f1d1a;
+      --muted: #7a746b;
+      --line: #e6e1d8;
+      --accent: #b4532a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #161514;
+        --fg: #ece8e1;
+        --muted: #9a938a;
+        --line: #2c2a27;
+        --accent: #e08a5f;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font: 17px/1.6 Georgia, "Times New Roman", serif;
+    }
+    main { max-width: 680px; margin: 0 auto; padding: 48px 16px 80px; }
+    header { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+    h1 { margin: 0; font-size: 28px; font-weight: normal; }
+    .count { color: var(--muted); font: 14px system-ui, sans-serif; }
+    input {
+      width: 100%;
+      margin: 24px 0 8px;
+      padding: 10px 12px;
+      font: 15px system-ui, sans-serif;
+      color: var(--fg);
+      background: transparent;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    input:focus { outline: none; border-color: var(--accent); }
+    article { padding: 28px 0; border-bottom: 1px solid var(--line); }
+    blockquote { margin: 0; font-size: 21px; white-space: pre-wrap; }
+    blockquote::before { content: "\201C"; color: var(--accent); margin-right: 2px; }
+    blockquote::after { content: "\201D"; color: var(--accent); margin-left: 2px; }
+    .meta { margin-top: 10px; color: var(--muted); font: 14px system-ui, sans-serif; }
+    .meta .source { color: var(--fg); }
+    .empty { color: var(--muted); padding: 28px 0; font-family: system-ui, sans-serif; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Quotes</h1>
+      <span class="count" id="count"></span>
+    </header>
+    <input id="search" type="search" placeholder="Search quotes or sources…" autocomplete="off">
+    <div id="list"></div>
+  </main>
+
+  <script>
+    const list = document.getElementById("list");
+    const search = document.getElementById("search");
+    const count = document.getElementById("count");
+    let quotes = [];
+
+    function render() {
+      const q = search.value.trim().toLowerCase();
+      const shown = quotes.filter(x =>
+        !q || x.text.toLowerCase().includes(q) || (x.source || "").toLowerCase().includes(q)
+      );
+      count.textContent = `${quotes.length} quote${quotes.length === 1 ? "" : "s"}`;
+      list.replaceChildren(...shown.map(x => {
+        const article = document.createElement("article");
+        const bq = document.createElement("blockquote");
+        bq.textContent = x.text;
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        const source = document.createElement("span");
+        source.className = "source";
+        source.textContent = "— " + (x.source || "Unknown");
+        meta.append(source);
+        if (x.added) meta.append(" · " + x.added);
+        article.append(bq, meta);
+        return article;
+      }));
+      if (!shown.length) {
+        const p = document.createElement("p");
+        p.className = "empty";
+        p.textContent = q ? "No matches." : "No quotes yet.";
+        list.append(p);
+      }
+    }
+
+    fetch("quotes.json", { cache: "no-cache" })
+      .then(r => r.json())
+      .then(data => {
+        quotes = data.slice().sort((a, b) => (b.added || "").localeCompare(a.added || ""));
+        render();
+      })
+      .catch(() => { list.innerHTML = '<p class="empty">Could not load quotes.json</p>'; });
+
+    search.addEventListener("input", render);
+  </script>
+</body>
+</html>
